@@ -59,6 +59,7 @@ button:not(:disabled):active { transform: scale(.96); }
 .stage-root { position: absolute; z-index: 0; inset: 58px 46px 86px 0; }
 .molstar-host, .molstar-host > div, .molstar-host .msp-plugin { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
 .molstar-host .msp-plugin { font-family: "IBM Plex Sans Arabic", Arial, sans-serif !important; }
+.molstar-host .msp-layout-standard { border: 0 !important; }
 .molstar-host .msp-viewport { background: #f8fafc !important; }
 .molstar-host .msp-viewport-controls, .molstar-host .msp-logo, .molstar-host .msp-layout-controls, .molstar-host .msp-highlight-toast-wrapper { display: none !important; }
 .scene-heading { position: absolute; top: 22px; right: 25px; z-index: 2; max-width: calc(100% - 116px); pointer-events: none; }
