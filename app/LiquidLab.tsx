@@ -204,8 +204,8 @@ export default function LiquidLab() {
           </div>
           {focusMode && <div className="focus-chrome">
             <div className="focus-navigation glass-panel"><button type="button" aria-label="النموذج السابق" onClick={() => navigate(-1)}><ArrowRightIcon size={19} aria-hidden="true" /></button><button type="button" className="focus-model-picker" onClick={() => setPickerOpen(true)}><GridFourIcon size={17} aria-hidden="true" /><span>{modelIndex + 1} / {molecules.length}</span></button><button type="button" aria-label="النموذج التالي" onClick={() => navigate(1)}><ArrowLeftIcon size={19} aria-hidden="true" /></button></div>
-            <button type="button" className="quiet-button glass-panel" aria-pressed={focusInspector} onClick={() => setFocusInspector(value => !value)}><AtomIcon size={18} aria-hidden="true" />الأجزاء</button>
-            <button type="button" className="quiet-button glass-panel" onClick={() => setFocusMode(false)}><ArrowsInSimpleIcon size={18} aria-hidden="true" />إنهاء العرض</button>
+            <button type="button" className="quiet-button glass-panel" aria-label="الأجزاء" aria-pressed={focusInspector} onClick={() => setFocusInspector(value => !value)}><AtomIcon size={18} aria-hidden="true" />الأجزاء</button>
+            <button type="button" className="quiet-button glass-panel" aria-label="إنهاء العرض" onClick={() => setFocusMode(false)}><ArrowsInSimpleIcon size={18} aria-hidden="true" />إنهاء العرض</button>
           </div>}
           {focusMode && !focusInspector && hasSelection && <div className="focus-caption glass-panel" aria-live="polite"><button className="caption-close" type="button" aria-label="مسح التحديد" onClick={clearSelection}><XIcon size={17} aria-hidden="true" /></button>{selectionContent}</div>}
           {focusMode && !focusInspector && reactionControls && <div className="focus-reaction glass-panel">{reactionControls}</div>}
@@ -213,8 +213,8 @@ export default function LiquidLab() {
           <div className="canvas-tools glass-panel" aria-label="أدوات العرض">
             <div className="mode-switch" role="group" aria-label="شكل النموذج">{modes.filter(item => item.id !== "cartoon" || molecule.protein).map(item => <button key={item.id} type="button" disabled={!ready} aria-pressed={mode === item.id} onClick={() => setMode(item.id)}><item.icon size={18} aria-hidden="true" /><span>{item.label}</span></button>)}</div>
             <div className="tool-actions">
-              <button type="button" disabled={!ready} aria-pressed={showLabels} onClick={() => setShowLabels(value => !value)}><TextTIcon size={18} aria-hidden="true" /><span>{molecule.protein ? "اسم النموذج" : "أسماء الذرات"}</span></button>
-              <button type="button" disabled={!ready} aria-pressed={autoRotate} onClick={() => setAutoRotate(value => !value)}>{autoRotate ? <PauseIcon size={18} aria-hidden="true" /> : <PlayIcon size={18} aria-hidden="true" />}<span>دوران</span></button>
+              <button type="button" disabled={!ready} aria-label={molecule.protein ? "اسم النموذج" : "أسماء الذرات"} aria-pressed={showLabels} onClick={() => setShowLabels(value => !value)}><TextTIcon size={18} aria-hidden="true" /><span>{molecule.protein ? "اسم النموذج" : "أسماء الذرات"}</span></button>
+              <button type="button" disabled={!ready} aria-label="دوران تلقائي" aria-pressed={autoRotate} onClick={() => setAutoRotate(value => !value)}>{autoRotate ? <PauseIcon size={18} aria-hidden="true" /> : <PlayIcon size={18} aria-hidden="true" />}<span>دوران</span></button>
               <button type="button" disabled={!ready || captureStatus === "saving"} aria-label="حفظ صورة للمجسم" title="حفظ صورة PNG" onClick={() => setCaptureSignal(value => value + 1)}><CameraIcon size={19} aria-hidden="true" /><span className="capture-text">{captureStatus === "saving" ? "حفظ…" : "صورة"}</span></button>
             </div>
           </div>
