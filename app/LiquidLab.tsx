@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/csr/ArrowRight";
 import { ArrowsOutSimpleIcon } from "@phosphor-icons/react/dist/csr/ArrowsOutSimple";
@@ -18,6 +18,8 @@ import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
 import { PauseIcon } from "@phosphor-icons/react/dist/csr/Pause";
 import { StackIcon } from "@phosphor-icons/react/dist/csr/Stack";
+import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
+import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import MolstarStage, { type PickedAtom, type RenderMode, type StageStatus } from "./MolstarStage";
 import ModelPicker from "./ModelPicker";
 import { categories, molecules, reactions, type Category } from "./moleculeCatalog";
@@ -43,7 +45,36 @@ function Formula({ value }: { value: string }) {
   )}</span>;
 }
 
+function subscribeTheme(notify: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== "lamset-bio-theme") return;
+    const next = event.newValue === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = next;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "dark" ? "#111820" : "#f8fafc");
+    notify();
+  };
+  window.addEventListener("lamset-bio-theme", notify);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener("lamset-bio-theme", notify);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+const getTheme = (): "light" | "dark" => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+const getServerTheme = (): "light" | "dark" => "light";
+
 export default function LiquidLab() {
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
+  function toggleTheme() {
+    const next = theme === "light" ? "dark" : "light";
+    document.documentElement.dataset.theme = next;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "dark" ? "#111820" : "#f8fafc");
+    window.dispatchEvent(new Event("lamset-bio-theme"));
+    try { localStorage.setItem("lamset-bio-theme", next); } catch { /* Theme works even when storage is unavailable. */ }
+  }
+  const themeButton = <button type="button" className="theme-toggle quiet-button" onClick={toggleTheme} aria-label={theme === "light" ? "تفعيل الثيم الداكن" : "تفعيل الثيم الأبيض"} title={theme === "light" ? "الثيم الداكن" : "الثيم الأبيض"} aria-pressed={theme === "dark"}>
+    {theme === "light" ? <MoonIcon size={19} aria-hidden="true" /> : <SunIcon size={19} aria-hidden="true" />}
+  </button>;
   const [category, setCategory] = useState<Category>("carbs");
   const [selectedId, setSelectedId] = useState("glucose");
   const [mode, setMode] = useState<RenderMode>("ball-and-stick");
@@ -180,7 +211,7 @@ export default function LiquidLab() {
       <nav className="category-tabs glass-panel" aria-label="مجموعات الجزيئات">{categories.map(item =>
         <button key={item.id} type="button" className={category === item.id ? "active" : ""} aria-current={category === item.id ? "page" : undefined} onClick={() => switchCategory(item.id)}>{item.label}</button>,
       )}</nav>
-      <div className="header-actions"><button type="button" className="quiet-button" onClick={() => setPickerOpen(true)}><GridFourIcon size={18} aria-hidden="true" />كل النماذج</button><button type="button" className="presentation-button" onClick={() => { setFocusInspector(false); setFocusMode(true); }}><ArrowsOutSimpleIcon size={18} aria-hidden="true" />وضع العرض</button></div>
+      <div className="header-actions">{themeButton}<button type="button" className="quiet-button" aria-label="كل النماذج" onClick={() => setPickerOpen(true)}><GridFourIcon size={18} aria-hidden="true" />كل النماذج</button><button type="button" className="presentation-button" onClick={() => { setFocusInspector(false); setFocusMode(true); }}><ArrowsOutSimpleIcon size={18} aria-hidden="true" />وضع العرض</button></div>
     </header>
     <nav className="molecule-nav" aria-label="اختر جزيئًا">
       <span className="nav-label">{categories.find(item => item.id === category)?.label}<small>{categoryMolecules.length} نماذج</small></span>
@@ -190,7 +221,7 @@ export default function LiquidLab() {
     <div className="hero-layout">
       <section className="model-column" aria-label={"نموذج " + sceneName}>
         <div className="main-scene">
-          <MolstarStage source={activeScene?.source ?? molecule.source} format={molecule.format ?? "sdf"} protein={!!molecule.protein} mode={mode} resetSignal={resetSignal} zoomSignal={zoomSignal} focusSignal={focusSignal} captureSignal={captureSignal} onCaptureStatus={setCaptureStatus} label={sceneName} onAtomSelect={handleAtomSelect} selectedElement={selectedElement} selectedAtomIndices={selectedPart?.atomIndices ?? (pickedAtom ? [pickedAtom.atomIndex] : [])} selectionColor={selectedPart?.color ?? atomInfo?.color} showLabels={showLabels} autoRotate={autoRotate} onStatusChange={setStageStatus} />
+          <MolstarStage theme={theme} source={activeScene?.source ?? molecule.source} format={molecule.format ?? "sdf"} protein={!!molecule.protein} mode={mode} resetSignal={resetSignal} zoomSignal={zoomSignal} focusSignal={focusSignal} captureSignal={captureSignal} onCaptureStatus={setCaptureStatus} label={sceneName} onAtomSelect={handleAtomSelect} selectedElement={selectedElement} selectedAtomIndices={selectedPart?.atomIndices ?? (pickedAtom ? [pickedAtom.atomIndex] : [])} selectionColor={selectedPart?.color ?? atomInfo?.color} showLabels={showLabels} autoRotate={autoRotate} onStatusChange={setStageStatus} />
           <div className="scene-heading">
             <span className="eyebrow">{reactionView ? reactionView.phase === "reactants" ? "مكوّنات منفصلة" : "الجزيء المرتبط والماء" : "عارض الجزيئات ثلاثي الأبعاد"}</span>
             <h1>{sceneName}</h1><p>{reactionView ? "كل المكوّنات ظاهرة في المشهد" : molecule.detail}</p>
@@ -203,6 +234,7 @@ export default function LiquidLab() {
             <button type="button" aria-label="إعادة التمركز" title="إعادة التمركز" disabled={!ready} onClick={() => setResetSignal(value => value + 1)}><TargetIcon size={19} aria-hidden="true" /></button>
           </div>
           {focusMode && <div className="focus-chrome">
+            {themeButton}
             <div className="focus-navigation glass-panel"><button type="button" aria-label="النموذج السابق" onClick={() => navigate(-1)}><ArrowRightIcon size={19} aria-hidden="true" /></button><button type="button" className="focus-model-picker" onClick={() => setPickerOpen(true)}><GridFourIcon size={17} aria-hidden="true" /><span>{modelIndex + 1} / {molecules.length}</span></button><button type="button" aria-label="النموذج التالي" onClick={() => navigate(1)}><ArrowLeftIcon size={19} aria-hidden="true" /></button></div>
             <button type="button" className="quiet-button glass-panel" aria-label="الأجزاء" aria-pressed={focusInspector} onClick={() => setFocusInspector(value => !value)}><AtomIcon size={18} aria-hidden="true" />الأجزاء</button>
             <button type="button" className="quiet-button glass-panel" aria-label="إنهاء العرض" onClick={() => setFocusMode(false)}><ArrowsInSimpleIcon size={18} aria-hidden="true" />إنهاء العرض</button>

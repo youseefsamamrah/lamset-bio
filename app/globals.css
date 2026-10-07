@@ -6,11 +6,13 @@
   --muted: #657385;
   --line: rgba(37,49,64,.10);
   --glass: rgba(255,255,255,.72);
+  --page-background: #f2f4f7;
+  --scene-background: #f8fafc;
   --ease-out: cubic-bezier(.23,1,.32,1);
 }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; margin: 0; }
-body { background: #f2f4f7; color: var(--ink); font-family: "IBM Plex Sans Arabic", Arial, sans-serif; }
+body { background: var(--page-background); color: var(--ink); font-family: "IBM Plex Sans Arabic", Arial, sans-serif; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button svg { flex-shrink: 0; }
@@ -26,7 +28,7 @@ button:not(:disabled):active { transform: scale(.96); }
   min-height: 100dvh; height: 100dvh;
   display: flex; flex-direction: column; gap: 12px;
   padding: 16px 24px 8px;
-  background: #f2f4f7; animation: viewer-enter 220ms var(--ease-out);
+  background: var(--page-background); animation: viewer-enter 220ms var(--ease-out);
 }
 /* CSS approximation of liquid glass for the web. */
 .glass-panel {
@@ -55,12 +57,12 @@ button:not(:disabled):active { transform: scale(.96); }
 .molecule-scroll button[aria-current="true"] { color: var(--accent); background: rgba(var(--accent-rgb),.08); border-color: rgba(var(--accent-rgb),.22); }
 .hero-layout { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 14px; flex: 1; min-height: 0; }
 .model-column { min-width: 0; min-height: 0; }
-.main-scene { position: relative; height: 100%; min-height: 0; overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 24px; background: #f8fafc; box-shadow: 0 10px 35px rgba(37,49,64,.035); }
+.main-scene { position: relative; height: 100%; min-height: 0; overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 24px; background: var(--scene-background); box-shadow: 0 10px 35px rgba(37,49,64,.035); }
 .stage-root { position: absolute; z-index: 0; inset: 58px 46px 86px 0; }
 .molstar-host, .molstar-host > div, .molstar-host .msp-plugin { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
 .molstar-host .msp-plugin { font-family: "IBM Plex Sans Arabic", Arial, sans-serif !important; }
 .molstar-host .msp-layout-standard { border: 0 !important; }
-.molstar-host .msp-viewport { background: #f8fafc !important; }
+.molstar-host .msp-viewport { background: var(--scene-background) !important; }
 .molstar-host .msp-viewport-controls, .molstar-host .msp-logo, .molstar-host .msp-layout-controls, .molstar-host .msp-highlight-toast-wrapper { display: none !important; }
 .scene-heading { position: absolute; top: 22px; right: 25px; z-index: 2; max-width: calc(100% - 116px); pointer-events: none; }
 .eyebrow { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 400; }
@@ -324,3 +326,85 @@ kbd { font: 10px Arial; color: #526278; border: 1px solid var(--line); padding: 
   .viewer-app { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) { .model-picker { backdrop-filter: none; -webkit-backdrop-filter: none; background: #fff; } }
+
+/* Both palettes share the same layout and interaction targets. */
+.theme-toggle { width: 44px; min-width: 44px; padding: 0 !important; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e4eaf2;
+  --muted: #a5b2c2;
+  --line: rgba(203,216,231,.13);
+  --glass: rgba(26,35,44,.80);
+  --page-background: #0b1117;
+  --scene-background: #111820;
+}
+[data-theme="dark"] .viewer-app {
+  --accent: #a9c4df;
+  --accent-rgb: 169,196,223;
+}
+[data-theme="dark"] .glass-panel {
+  background: linear-gradient(125deg,rgba(51,65,80,.38),rgba(26,35,44,.16) 65%),var(--glass);
+  box-shadow: inset 0 1px 0 rgba(220,232,245,.06),0 8px 30px rgba(0,0,0,.12);
+}
+[data-theme="dark"] .identity-mark,
+[data-theme="dark"] .category-tabs button.active,
+[data-theme="dark"] .reaction-actions button:first-child { background: #c1d5e9; color: #172737; }
+[data-theme="dark"] .main-scene { border-color: var(--line); }
+[data-theme="dark"] .molecule-nav { border-color: var(--line); }
+[data-theme="dark"] .quiet-button,
+[data-theme="dark"] .presentation-button,
+[data-theme="dark"] .scene-exit,
+[data-theme="dark"] .part-button,
+[data-theme="dark"] .element-legend button,
+[data-theme="dark"] .picker-option,
+[data-theme="dark"] .picker-close { background: rgba(31,43,55,.75); border-color: var(--line); color: var(--ink); }
+[data-theme="dark"] .molecule-scroll button[aria-current="true"],
+[data-theme="dark"] .part-button[aria-pressed="true"],
+[data-theme="dark"] .element-legend button[aria-pressed="true"],
+[data-theme="dark"] .mode-switch button[aria-pressed="true"],
+[data-theme="dark"] .picker-option[aria-current="true"] { background: #2c4054; border-color: #526c86; color: #e1edfa; box-shadow: none; }
+[data-theme="dark"] .parts-count,
+[data-theme="dark"] .stage-loading,
+[data-theme="dark"] .stage-error,
+[data-theme="dark"] .stage-error button,
+[data-theme="dark"] .capture-error { background: #1d2935; }
+[data-theme="dark"] .scene-heading h1,
+[data-theme="dark"] .scene-heading p { text-shadow: none; }
+[data-theme="dark"] .scene-zoom button,
+[data-theme="dark"] .canvas-tools button:not([aria-pressed="true"]),
+[data-theme="dark"] .selection-empty p,
+[data-theme="dark"] .selection-card p,
+[data-theme="dark"] .focus-caption p { color: #c2cedc; }
+[data-theme="dark"] .scene-zoom button + button { border-color: var(--line); }
+[data-theme="dark"] .scene-hint,
+[data-theme="dark"] .molecule-meta,
+[data-theme="dark"] .viewer-footer,
+[data-theme="dark"] .reaction-panel small,
+[data-theme="dark"] .example-note,
+[data-theme="dark"] .picker-group h3,
+[data-theme="dark"] .picker-group h3 span,
+[data-theme="dark"] .picker-foot,
+[data-theme="dark"] kbd { color: var(--muted); }
+[data-theme="dark"] .element-legend b,
+[data-theme="dark"] .atom-token { color: #d1e0ef !important; }
+[data-theme="dark"] .model-picker { background: rgba(20,29,39,.97); border-color: var(--line); box-shadow: 0 24px 100px rgba(0,0,0,.45); }
+[data-theme="dark"] .model-picker::backdrop { background: rgba(0,0,0,.5); }
+[data-theme="dark"] .picker-search { background: #0f1822; }
+[data-theme="dark"] .picker-search input::placeholder { color: var(--muted); }
+[data-theme="dark"] .picker-search:focus-within { border-color: #93b6d9; }
+[data-theme="dark"] .molecule-scroll,
+[data-theme="dark"] .info-panel,
+[data-theme="dark"] .picker-results { scrollbar-color: #435365 transparent; }
+@media (hover:hover) and (pointer:fine) {
+  [data-theme="dark"] .quiet-button:hover,
+  [data-theme="dark"] .part-button:hover,
+  [data-theme="dark"] .element-legend button:hover,
+  [data-theme="dark"] .picker-option:hover { background: #314355; }
+}
+@media (max-width:800px) {
+  [data-theme="dark"] .is-focused.show-focus-inspector .info-panel { background: #18232e; }
+}
+@media (prefers-reduced-transparency:reduce) {
+  [data-theme="dark"] .glass-panel,
+  [data-theme="dark"] .model-picker { background: #18232e; }
+}

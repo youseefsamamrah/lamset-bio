@@ -134,7 +134,13 @@ function loadMolstar() {
   return molstarScript;
 }
 
-async function setRepresentation(viewer: MolstarViewer, mode: RenderMode, protein: boolean, showLabels: boolean, modelLabel: string) {
+type Theme = "light" | "dark";
+const stageThemes = {
+  light: { background: 0xf8fafc, labels: 0x203246, selection: 0x55748a, highlight: 0x8598aa },
+  dark: { background: 0x111820, labels: 0xf3f6fa, selection: 0x91b5d8, highlight: 0xb8cce0 },
+};
+
+async function setRepresentation(viewer: MolstarViewer, mode: RenderMode, protein: boolean, showLabels: boolean, modelLabel: string, theme: Theme) {
   const components = viewer.plugin.managers.structure.hierarchy.current.structures.flatMap((structure) => structure.components);
   if (!components.length) return;
 
@@ -182,11 +188,11 @@ async function setRepresentation(viewer: MolstarViewer, mode: RenderMode, protei
         }
       }
       await viewer.plugin.builders.structure.representation.addRepresentation(component.cell, {
-        type: protein ? "mvs-custom-label" : "label", color: "uniform", colorParams: { value: 0x203246 },
+        type: protein ? "mvs-custom-label" : "label", color: "uniform", colorParams: { value: stageThemes[theme].labels },
         typeParams: {
           ...(protein ? { items } : {}),
           level: "element", elementScale: 0.38, sizeFactor: 1,
-          borderWidth: 0.18, borderColor: 0xf8fafc,
+          borderWidth: 0.18, borderColor: stageThemes[theme].background,
           background: false, ignoreHydrogens: false,
           attachment: "middle-center", offsetZ: 0.55,
         },
@@ -273,6 +279,7 @@ function frameModel(viewer: MolstarViewer, protein: boolean, mode:RenderMode, fo
 }
 
 type StageProps = {
+  theme?: Theme;
   source: string;
   format: "sdf" | "pdb";
   protein: boolean;
@@ -292,7 +299,7 @@ type StageProps = {
   onStatusChange?: (status: StageStatus) => void;
 };
 
-export default function MolstarStage({ source, format, protein, mode, resetSignal, zoomSignal, label, onAtomSelect, selectedAtomIndices, selectedElement, focusSignal = 0, captureSignal = 0, onCaptureStatus, showLabels = true, autoRotate = false, onStatusChange }: StageProps) {
+export default function MolstarStage({ theme = "light", source, format, protein, mode, resetSignal, zoomSignal, label, onAtomSelect, selectedAtomIndices, selectedElement, focusSignal = 0, captureSignal = 0, onCaptureStatus, showLabels = true, autoRotate = false, onStatusChange }: StageProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<MolstarViewer | null>(null);
   const [status, setStatus] = useState<StageStatus>("boot");
@@ -311,6 +318,8 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
   const desiredModeRef = useRef(mode);
   const desiredLabelsRef = useRef(showLabels);
   const appliedLabelsRef = useRef<boolean | null>(null);
+  const desiredThemeRef = useRef(theme);
+  const appliedThemeRef = useRef<Theme | null>(null);
   const previousResetSignalRef = useRef(resetSignal);
   const previousZoomSignalRef = useRef(zoomSignal);
   const desiredSourceRef = useRef(source);
@@ -325,7 +334,16 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
   useEffect(() => {
     desiredModeRef.current = mode;
     desiredLabelsRef.current = showLabels;
-  }, [mode, showLabels]);
+    desiredThemeRef.current = theme;
+  }, [mode, showLabels, theme]);
+
+  useEffect(() => {
+    const colors = stageThemes[theme];
+    viewerRef.current?.plugin.canvas3d?.setProps({
+      renderer: { backgroundColor: colors.background, selectColor: colors.selection, highlightColor: colors.highlight },
+      marking: { selectEdgeColor: colors.selection, highlightEdgeColor: colors.highlight },
+    });
+  }, [theme, status]);
 
   useEffect(() => { onStatusChange?.(status); }, [status, onStatusChange]);
 
@@ -345,14 +363,14 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
     selectedAtomIndicesRef.current = selectedAtomIndices;
     selectedElementRef.current = selectedElement;
     if (status === "ready" && viewerRef.current) {
-      const color = 0x55748a;
+      const color = stageThemes[theme].selection;
       viewerRef.current.plugin.canvas3d?.setProps({
         renderer: { selectColor: color },
         marking: { selectEdgeColor: color },
       });
       markSelectedAtoms(viewerRef.current, selectedAtomIndices, selectedElement, protein);
     }
-  }, [selectedAtomIndices, selectedElement, status, protein]);
+  }, [selectedAtomIndices, selectedElement, status, protein, theme]);
 
   useEffect(() => {
     let disposed = false;
@@ -376,7 +394,7 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
           viewportShowSettings: false,
           viewportShowSelectionMode: false,
           viewportShowAnimation: false,
-          viewportBackgroundColor: "#f8fafc",
+          viewportBackgroundColor: desiredThemeRef.current === "dark" ? "#111820" : "#f8fafc",
           illumination: false,
           resolutionMode: "auto",
           transparency: "blended",
@@ -390,14 +408,15 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
           if (atom) onAtomSelectRef.current?.(atom);
         });
         clickSubscriptionRef.current = clickSubscription;
+        const colors = stageThemes[desiredThemeRef.current];
         viewer.plugin.canvas3d?.setProps({
-          renderer: { backgroundColor: 0xf8fafc, selectColor: 0x55748a, highlightColor: 0x8598aa, selectStrength: 0.32, ambientIntensity: 0.48,
+          renderer: { backgroundColor: colors.background, selectColor: colors.selection, highlightColor: colors.highlight, selectStrength: 0.32, ambientIntensity: 0.48,
             light: [{ inclination:150, azimuth:320, color:0xffffff, intensity:0.7 }, { inclination:65, azimuth:110, color:0xe8eef5, intensity:0.25 }] },
           postprocessing: {
             occlusion: window.matchMedia("(max-width: 700px)").matches ? { name:"off", params:{} } : { name:"on", params:{ samples:16, radius:2.6, bias:0.95, color:0x445468, blurKernelSize:9, resolutionScale:0.5, multiScale:{name:"off",params:{}} } },
             shadow: { name:"off", params:{} }, dof: { name:"off", params:{} },
           },
-          marking: { selectEdgeColor: 0x55748a, highlightEdgeColor: 0x8598aa },
+          marking: { selectEdgeColor: colors.selection, highlightEdgeColor: colors.highlight },
           camera: { mode: "perspective", manualReset:true, helper: { axes: { name: "off", params: {} } } },
           // Mol* normally checks just 3 px around a tap. The wider target makes
           // small atoms and thin bonds usable without changing their appearance.
@@ -432,6 +451,7 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
         setStatus("loading");
         appliedModeRef.current = null;
         appliedLabelsRef.current = null;
+        appliedThemeRef.current = null;
         await currentViewer.plugin.clear();
         if (loadId !== latestLoad.current || viewerRef.current !== currentViewer) return;
         await currentViewer.loadStructureFromUrl(publicAsset(source), format, false, {
@@ -445,10 +465,12 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
         if (loadId !== latestLoad.current || viewerRef.current !== currentViewer) return;
         const currentMode = desiredModeRef.current;
         const currentLabels = desiredLabelsRef.current;
-        await setRepresentation(currentViewer, currentMode, protein, currentLabels, label);
+        const currentTheme = desiredThemeRef.current;
+        await setRepresentation(currentViewer, currentMode, protein, currentLabels, label, currentTheme);
         if (loadId !== latestLoad.current || viewerRef.current !== currentViewer) return;
         appliedModeRef.current = currentMode;
         appliedLabelsRef.current = currentLabels;
+        appliedThemeRef.current = currentTheme;
         frameModel(currentViewer, protein, currentMode);
         markSelectedAtoms(currentViewer, selectedAtomIndicesRef.current, selectedElementRef.current, protein);
         loadedSourceRef.current = source;
@@ -467,7 +489,7 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
 
   useEffect(() => {
     const viewer = viewerRef.current;
-    if (!viewer || status !== "ready" || (appliedModeRef.current === mode && appliedLabelsRef.current === showLabels)) return;
+    if (!viewer || status !== "ready" || (appliedModeRef.current === mode && appliedLabelsRef.current === showLabels && appliedThemeRef.current === theme)) return;
     const loadId = latestLoad.current;
     async function changeMode() {
       try {
@@ -476,11 +498,13 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
         while (viewerRef.current === viewer && loadId === latestLoad.current) {
           const targetMode = desiredModeRef.current;
           const targetLabels = desiredLabelsRef.current;
-          if (appliedModeRef.current === targetMode && appliedLabelsRef.current === targetLabels) return;
-          await setRepresentation(viewer!, targetMode, protein, targetLabels, label);
+          const targetTheme = desiredThemeRef.current;
+          if (appliedModeRef.current === targetMode && appliedLabelsRef.current === targetLabels && appliedThemeRef.current === targetTheme) return;
+          await setRepresentation(viewer!, targetMode, protein, targetLabels, label, targetTheme);
           if (viewerRef.current !== viewer || loadId !== latestLoad.current) return;
           appliedModeRef.current = targetMode;
           appliedLabelsRef.current = targetLabels;
+          appliedThemeRef.current = targetTheme;
           markSelectedAtoms(viewer!, selectedAtomIndicesRef.current, selectedElementRef.current, protein);
         }
       } catch (error) {
@@ -489,7 +513,7 @@ export default function MolstarStage({ source, format, protein, mode, resetSigna
       }
     }
     loadQueueRef.current = loadQueueRef.current.then(changeMode, changeMode);
-  }, [mode, showLabels, protein, status, label]);
+  }, [mode, showLabels, protein, status, label, theme]);
 
   useEffect(() => {
     // A new model becoming ready already centers itself in load(). A selected
