@@ -329,6 +329,9 @@ kbd { font: 10px Arial; color: #526278; border: 1px solid var(--line); padding: 
 
 /* Both palettes share the same layout and interaction targets. */
 .theme-toggle { width: 44px; min-width: 44px; padding: 0 !important; }
+@media (max-width:360px) {
+  .header-actions .presentation-button { width: 44px; min-width: 44px; padding: 0; font-size: 0; }
+}
 :root[data-theme="dark"] {
   color-scheme: dark;
   --ink: #e4eaf2;
